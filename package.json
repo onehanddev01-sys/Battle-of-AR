@@ -1,0 +1,14 @@
+{
+  "name": "battle-of-ar",
+  "version": "1.0.0",
+  "description": "Room-based AR rock paper scissors game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}
