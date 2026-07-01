@@ -98,9 +98,30 @@ video {
   font-weight: 700;
 }
 
+.game-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.5fr;
+  gap: 1rem;
+}
+
+.game-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.game-side-left {
+  min-width: 320px;
+}
+
+.game-side-right {
+  display: flex;
+  flex-direction: column;
+}
+
 .controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
   gap: 0.7rem;
   margin-top: 1rem;
 }
