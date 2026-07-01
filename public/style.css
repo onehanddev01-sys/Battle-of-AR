@@ -1,179 +1,130 @@
-:root {
-  color-scheme: dark;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #07111f;
-  color: #f5f8ff;
+﻿:root {
+  --bg-start: #07111f;
+  --bg-end: #1d4ed8;
+  --surface: rgba(15, 23, 42, 0.95);
+  --surface-soft: rgba(255, 255, 255, 0.08);
+  --text: #f5f8ff;
+  --accent: #38bdf8;
+  --accent-muted: rgba(255, 255, 255, 0.12);
+  --radius: 1.5rem;
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.27);
+  --spacing: 1rem;
+  --spacing-sm: 0.75rem;
+  --btn-height: 3.75rem;
+  --max-width: 1500px;
+  --bp-sm: 640px;
+  --bp-md: 960px;
+  --bp-lg: 1200px;
+  --video-aspect: 4 / 3;
 }
 
 *, *::before, *::after {
-  box-sizing: border-box; /* แก้: กัน padding ดันขนาด input/button ล้น */
+  box-sizing: border-box;
 }
 
 html,
 body {
   margin: 0;
-  min-height: 100vh;
+  min-height: 100%;
+  width: 100%;
   overflow-x: hidden;
 }
 
 body {
-  background: linear-gradient(135deg, #0f172a, #1d4ed8);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text);
+  background: linear-gradient(135deg, var(--bg-start), var(--bg-end));
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
 }
 
 .app-shell {
   width: 100%;
-  max-width: 1500px;
-  display: grid;
-  grid-template-columns: minmax(320px, 480px) minmax(520px, 1fr);
-  gap: 1.25rem;
-  padding: 1.5rem;
+  max-width: var(--max-width);
   margin: 0 auto;
-}
-
-.menu-screen {
-  grid-column: 1;
-}
-
-.game-panel {
-  grid-column: 2;
-}
-
-/* แก้: เพิ่ม breakpoint แท็บเล็ตแยกออกมา ลด min-height วิดีโอลงทีละขั้น */
-@media (max-width: 1100px) {
-  .video-wrap {
-    min-height: 340px;
-  }
-}
-
-@media (max-width: 960px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .game-panel,
-  .menu-screen {
-    grid-column: auto;
-  }
-
-  .video-wrap {
-    min-height: 300px;
-  }
-}
-
-@media (max-width: 640px) {
-  .app-shell {
-    padding: 1rem;
-    gap: 0.75rem;
-  }
-
-  .panel {
-    padding: 1rem;
-    border-radius: 16px;
-  }
-
-  .game-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0.85rem;
-    width: 100%;
-    align-items: stretch;
-  }
-
-  .game-side-left,
-  .game-side-right {
-    width: 100%;
-    min-width: 0;
-    order: 0;
-  }
-
-  .controls {
-    grid-template-columns: 1fr;
-  }
-
-  .controls button,
-  .join-form input,
-  .join-form select,
-  .join-form button {
-    width: 100%;
-  }
-
-  .controls button {
-    min-height: 52px;
-  }
-
-  .video-wrap {
-    min-height: 220px; /* แก้: ลดลงอีกสำหรับจอมือถือจริงๆ ไม่ใช่แค่แคบ */
-  }
-
-  .status-bar,
-  .room-info,
-  .round-info {
-    font-size: 0.95rem;
-  }
-}
-
-@media (max-width: 380px) {
-  /* แก้: เพิ่มไว้เผื่อจอมือถือจิ๋วๆ เช่น iPhone SE */
-  .app-shell {
-    padding: 0.75rem;
-  }
-
-  h1, h2, h3 {
-    font-size: 1.1rem;
-  }
+  padding: var(--spacing);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing);
+  min-height: 100vh;
 }
 
 .panel {
-  background: rgba(15, 23, 42, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 20px;
-  padding: 1.2rem;
-  box-shadow: 0 16px 45px rgba(0, 0, 0, 0.25);
+  background: rgba(15, 23, 42, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.menu-screen,
+.game-panel {
+  width: 100%;
 }
 
 .join-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.6rem;
+  gap: var(--spacing-sm);
   margin-top: 1rem;
 }
 
 .join-form input,
 .join-form select {
-  flex: 1 1 160px; /* แก้: ให้ input ยืด/หดตามพื้นที่แทนที่จะเท่ากันตายตัว */
+  flex: 1 1 160px;
   min-width: 0;
-}
-
-input,
-button {
-  padding: 0.8rem 0.9rem;
+  padding: 0.95rem 1rem;
   border-radius: 999px;
   border: none;
-  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
 }
 
-button {
-  cursor: pointer;
-  background: #38bdf8;
+.join-form button {
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: 0.95rem 1rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
   color: #052a4b;
   font-weight: 700;
-  min-height: 44px; /* แก้: touch target ขั้นต่ำ (Apple/Google guideline) แม้ในโหมดคอม */
 }
 
-button:hover {
-  filter: brightness(1.05);
+.secondary-form {
+  margin-top: 0.75rem;
 }
 
-button:active {
-  filter: brightness(0.95); /* แก้: feedback ตอนแตะบนมือถือ */
+.game-grid {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+}
+
+.game-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing);
+  width: 100%;
+  min-width: 0;
 }
 
 .video-wrap {
   position: relative;
+  width: 100%;
+  aspect-ratio: var(--video-aspect);
   overflow: hidden;
-  border-radius: 20px;
-  background: black;
-  min-height: 420px;
+  border-radius: var(--radius);
+  background: #000;
 }
 
 video {
@@ -188,39 +139,49 @@ video {
   inset: 0;
   display: grid;
   place-items: center;
-  color: white;
-  background: rgba(0, 0, 0, 0.35);
-  font-weight: 700;
-  text-align: center; /* แก้: กันข้อความยาวล้นขอบบนจอแคบ */
   padding: 0 1rem;
-}
-
-.game-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1.5fr;
-  gap: 1rem;
-}
-
-.game-side {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.game-side-left {
-  min-width: 0; /* แก้: เดิม 320px ทำให้ grid บีบตัวไม่ได้บนจอกลางๆ */
-}
-
-.game-side-right {
-  display: flex;
-  flex-direction: column;
+  text-align: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.42);
+  font-weight: 700;
+  line-height: 1.45;
+  overflow-wrap: break-word;
 }
 
 .controls {
   display: grid;
-  grid-template-columns: repeat(2, minmax(120px, 1fr));
-  gap: 0.7rem;
-  margin-top: 1rem;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-sm);
+}
+
+.controls button,
+.join-form button {
+  width: 100%;
+  min-height: var(--btn-height);
+  padding: 1rem 1.1rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: #052a4b;
+  font-weight: 700;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.controls button:hover,
+.join-form button:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.controls button:active,
+.join-form button:active {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+.controls button:last-child {
+  background: var(--accent-muted);
+  color: var(--text);
 }
 
 .status,
@@ -228,38 +189,109 @@ video {
 .round-info,
 .status-bar {
   margin-top: 0.9rem;
-  line-height: 1.5;
+  line-height: 1.6;
+  word-break: break-word;
 }
 
 .status-bar {
-  padding: 0.85rem 1rem;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.08);
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  background: var(--surface-soft);
+}
+
+.result-card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgba(56, 189, 248, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.result-card h3 {
+  margin: 0 0 0.85rem;
 }
 
 .hidden {
   display: none;
 }
 
-.result-card {
-  margin-top: 1rem;
-  padding: 1rem;
-  border-radius: 16px;
-  background: rgba(56, 189, 248, 0.14);
-  border: 1px solid rgba(56, 189, 248, 0.3);
-}
-
-.result-card h3 {
-  margin-top: 0;
-}
-
 select {
-  padding: 0.8rem 0.9rem;
+  padding: 0.95rem 1rem;
   border-radius: 999px;
   border: none;
-  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
 }
 
-.secondary-form {
-  margin-top: 0.7rem;
+@media (min-width: 640px) {
+  .app-shell {
+    padding: calc(var(--spacing) * 1.1);
+    gap: calc(var(--spacing) * 1.1);
+  }
+
+  .game-grid {
+    gap: calc(var(--spacing) * 1.1);
+  }
+
+  .controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .controls button:nth-child(1),
+  .controls button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .video-wrap {
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (min-width: 768px) {
+  .game-grid {
+    gap: calc(var(--spacing) * 1.25);
+  }
+
+  .controls {
+    gap: 0.85rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .app-shell {
+    display: grid;
+    grid-template-columns: 1.45fr 0.95fr;
+    align-items: start;
+  }
+
+  .game-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.95fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .video-wrap {
+    aspect-ratio: 16 / 9;
+  }
+
+  .game-side-right {
+    justify-content: start;
+  }
+}
+
+@media (min-width: 1200px) {
+  .app-shell {
+    padding: calc(var(--spacing) * 1.25);
+    gap: calc(var(--spacing) * 1.4);
+  }
+
+  .game-grid {
+    grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.85fr);
+  }
+}
+
+@media (min-width: 1440px) {
+  .app-shell {
+    gap: calc(var(--spacing) * 1.6);
+  }
 }
