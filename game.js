@@ -1,3 +1,21 @@
+function resolveRpsRound(player1Move, player2Move) {
+  if (player1Move === player2Move) {
+    return 'draw';
+  }
+
+  const wins = {
+    rock: 'scissors',
+    paper: 'rock',
+    scissors: 'paper',
+  };
+
+  if (wins[player1Move] === player2Move) {
+    return 'player1';
+  }
+
+  return 'player2';
+}
+
 function resolveCombatTurn(player1Move, player2Move, player1State, player2State) {
   let hp1 = player1State.hp;
   let hp2 = player2State.hp;
@@ -44,4 +62,4 @@ function resolveCombatTurn(player1Move, player2Move, player1State, player2State)
   };
 }
 
-module.exports = { resolveCombatTurn };
+module.exports = { resolveCombatTurn, resolveRpsRound };

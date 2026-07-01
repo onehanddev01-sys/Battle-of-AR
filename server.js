@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const { WebSocketServer } = require('ws');
-const { resolveCombatTurn } = require('./game');
+const { resolveCombatTurn, resolveRpsRound } = require('./game');
 const { removePlayerFromRoom } = require('./roomState');
 
 const app = express();
@@ -50,6 +50,8 @@ function broadcastRoom(room) {
         id: player.id,
         name: player.name,
         connected: player.connected,
+        hp: player.hp || 10,
+        energy: player.energy || 0,
       })),
       state: room.state,
       turn: room.turn,
@@ -92,6 +94,33 @@ function startTurn(room) {
       timeoutMs: TURN_TIMEOUT_MS,
     });
   });
+}
+
+function startRpsRound(room) {
+  if (room.timeout) {
+    clearTimeout(room.timeout);
+  }
+
+  room.state = 'playing';
+  room.turn += 1;
+  room.players.forEach((player) => {
+    player.move = null;
+  });
+  room.lastResult = null;
+
+  broadcastRoom(room);
+
+  room.players.forEach((player) => {
+    sendToPlayer(player, {
+      type: 'rps-start',
+      turn: room.turn,
+      timeoutMs: 10000,
+    });
+  });
+
+  room.timeout = setTimeout(() => {
+    finalizeRpsRound(room);
+  }, 10000);
 }
 
 function beginCountdown(room) {
@@ -190,6 +219,50 @@ function finalizeTurn(room) {
   }, 2500);
 }
 
+function finalizeRpsRound(room) {
+  if (room.state !== 'playing') {
+    return;
+  }
+
+  const player1 = room.players[0];
+  const player2 = room.players[1];
+
+  if (!player1 || !player2) {
+    room.state = 'waiting';
+    broadcastRoom(room);
+    return;
+  }
+
+  const move1 = player1.move || 'none';
+  const move2 = player2.move || 'none';
+  let result = 'timeout';
+  if (move1 !== 'none' && move2 !== 'none') {
+    result = resolveRpsRound(move1, move2);
+  }
+
+  room.state = 'result';
+  room.lastResult = {
+    turn: room.turn,
+    result,
+    moves: { player1: move1, player2: move2 },
+  };
+
+  broadcastRoom(room);
+
+  room.players.forEach((player) => {
+    sendToPlayer(player, {
+      type: 'rps-result',
+      turn: room.turn,
+      result,
+      moves: { player1: move1, player2: move2 },
+    });
+  });
+
+  room.timeout = setTimeout(() => {
+    startRpsRound(room);
+  }, 2500);
+}
+
 wss.on('connection', (ws) => {
   let currentRoom = null;
   let currentPlayer = null;
@@ -269,7 +342,11 @@ wss.on('connection', (ws) => {
         broadcastRoom(room);
 
         if (room.players.length === 2) {
-          startTurn(room);
+          if (room.mode === 'powerclash') {
+            startTurn(room);
+          } else if (room.mode === 'rps') {
+            startRpsRound(room);
+          }
         }
       }
 
@@ -289,7 +366,11 @@ wss.on('connection', (ws) => {
         const otherPlayer = currentRoom.players.find((player) => player.id !== currentPlayer.id);
 
         if (otherPlayer && otherPlayer.move) {
-          finalizeRound(currentRoom);
+          if (currentRoom.mode === 'powerclash') {
+            finalizeTurn(currentRoom);
+          } else if (currentRoom.mode === 'rps') {
+            finalizeRpsRound(currentRoom);
+          }
         } else {
           broadcastRoom(currentRoom);
           sendToPlayer(currentPlayer, { type: 'move-accepted', move: data.move });

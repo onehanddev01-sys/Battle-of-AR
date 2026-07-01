@@ -5,7 +5,7 @@ let currentRound = 0;
 let lastDetectedGesture = '';
 let lastGestureTime = 0;
 let cameraStarted = false;
-let currentMode = 'game';
+let currentMode = 'rps';
 let isHost = false;
 let roundState = 'waiting';
 let resultCardVisible = false;
@@ -31,6 +31,7 @@ const replayButton = document.getElementById('replay-button');
 const resultCard = document.getElementById('result-card');
 const resultTitle = document.getElementById('result-title');
 const resultText = document.getElementById('result-text');
+const moveButtons = Array.from(document.querySelectorAll('[data-move]'));
 
 function connectSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -46,14 +47,12 @@ function connectSocket() {
     if (data.type === 'joined') {
       roomCode = data.roomCode;
       playerName = data.playerName;
-      currentMode = data.mode || 'game';
+      currentMode = data.mode || 'rps';
       isHost = Boolean(data.isHost);
       menuScreen.classList.add('hidden');
       gameScreen.classList.remove('hidden');
+      setModeUI(currentMode);
       statusEl.textContent = `เข้าห้อง ${roomCode} เรียบร้อย`;
-      if (currentMode === 'test') {
-        overlayEl.textContent = 'โหมดทดสอบ: แสดงท่ามือและตรวจจับ';
-      }
       return;
     }
 
@@ -86,7 +85,16 @@ function connectSocket() {
       return;
     }
 
-    if (data.type === 'turn-result') {
+    if (data.type === 'rps-start') {
+      currentRound = data.turn;
+      roundState = 'playing';
+      roundInfoEl.textContent = `รอบที่ ${data.turn} เริ่มแล้ว ยกมือเพื่อเป่ายิงฉับ`;
+      overlayEl.textContent = 'ยกมือเพื่อเล่น';
+      showResultCard(false);
+      return;
+    }
+
+    if (data.type === 'turn-result' || data.type === 'rps-result') {
       roundState = 'result';
       showResultCard(true, data.result, data.moves, data.turn);
       resultText.textContent = formatResult(data.result, data.moves);
@@ -126,9 +134,23 @@ function formatResult(result, moves) {
 
 function renderRoomState(room) {
   const playerNames = room.players.map((player) => player.name).join(', ') || 'ยังไม่มีผู้เล่น';
-  const playerStats = room.players.length > 0 ? room.players.map((player) => `${player.name}: HP ${player.hp || 10} / EN ${player.energy || 0}`).join('<br/>') : 'ยังไม่มีผู้เล่น';
-  roomInfoEl.innerHTML = `ห้อง: <strong>${room.code}</strong><br/>ผู้เล่น: ${playerNames}<br/>สถานะ: ${room.state}`;
-  statusBarEl.innerHTML = `<strong>HP / Energy</strong><br/>${playerStats}`;
+  const modeLabel = room.mode === 'powerclash' ? 'Power Clash' : room.mode === 'rps' ? 'เป๋ายิงชับ' : 'โหมดทดสอบ';
+  const playerStats = room.players.length > 0
+    ? room.players.map((player) => {
+        if (room.mode === 'powerclash') {
+          return `${player.name}: HP ${player.hp} / EN ${player.energy}`;
+        }
+        return `${player.name}`;
+      }).join('<br/>')
+    : 'ยังไม่มีผู้เล่น';
+
+  roomInfoEl.innerHTML = `ห้อง: <strong>${room.code}</strong><br/>โหมด: ${modeLabel}<br/>ผู้เล่น: ${playerNames}<br/>สถานะ: ${room.state}`;
+
+  if (room.mode === 'powerclash') {
+    statusBarEl.innerHTML = `<strong>HP / Energy</strong><br/>${playerStats}`;
+  } else {
+    statusBarEl.innerHTML = `<strong>ผู้เล่น</strong><br/>${playerStats}`;
+  }
 
   if (room.players.length === 2) {
     statusEl.textContent = 'พร้อมเล่นแล้ว';
@@ -219,6 +241,24 @@ function sendMove(move) {
   socket.send(JSON.stringify({ type: 'move', move }));
 }
 
+function setModeUI(mode) {
+  currentMode = mode;
+
+  if (mode === 'powerclash') {
+    startRoundButton.classList.remove('hidden');
+    moveButtons.forEach((button) => button.classList.remove('hidden'));
+    overlayEl.textContent = 'ใช้ปุ่มคำสั่ง หรือรอเริ่มเทิร์น';
+  } else {
+    startRoundButton.classList.add('hidden');
+    moveButtons.forEach((button) => button.classList.add('hidden'));
+    if (mode === 'rps') {
+      overlayEl.textContent = 'ยกมือเพื่อเล่น เป่ายิงชับ';
+    } else if (mode === 'test') {
+      overlayEl.textContent = 'โหมดทดสอบ: ลองทำท่ามือ';
+    }
+  }
+}
+
 document.querySelectorAll('[data-move]').forEach((button) => {
   button.addEventListener('click', () => sendMove(button.dataset.move));
 });
@@ -288,7 +328,7 @@ function onResults(results) {
   if (gesture !== lastDetectedGesture || Date.now() - lastGestureTime > 700) {
     lastDetectedGesture = gesture;
     lastGestureTime = Date.now();
-    if (currentMode === 'game') {
+    if (currentMode === 'rps') {
       sendMove(gesture);
     }
   }
