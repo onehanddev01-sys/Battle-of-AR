@@ -51,7 +51,13 @@ body {
   }
 
   .game-grid {
+    display: flex;
+    flex-direction: column;
     gap: 0.85rem;
+  }
+
+  .game-side-right {
+    order: -1;
   }
 
   .game-side-left,
