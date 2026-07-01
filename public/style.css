@@ -92,3 +92,18 @@ video {
   margin-top: 0.9rem;
   line-height: 1.5;
 }
+
+.hidden {
+  display: none;
+}
+
+select {
+  padding: 0.8rem 0.9rem;
+  border-radius: 999px;
+  border: none;
+  font-size: 1rem;
+}
+
+.secondary-form {
+  margin-top: 0.7rem;
+}

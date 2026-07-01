@@ -3,6 +3,7 @@ const http = require('http');
 const path = require('path');
 const { WebSocketServer } = require('ws');
 const { resolveRound } = require('./game');
+const { removePlayerFromRoom } = require('./roomState');
 
 const app = express();
 const server = http.createServer(app);
@@ -19,9 +20,11 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true });
 });
 
-function createRoom(code) {
+function createRoom(code, mode, hostId) {
   return {
     code,
+    mode,
+    hostId,
     players: [],
     state: 'waiting',
     round: 0,
@@ -30,9 +33,9 @@ function createRoom(code) {
   };
 }
 
-function getRoom(code) {
+function getRoom(code, mode, hostId) {
   if (!rooms.has(code)) {
-    rooms.set(code, createRoom(code));
+    rooms.set(code, createRoom(code, mode, hostId));
   }
   return rooms.get(code);
 }
@@ -42,6 +45,7 @@ function broadcastRoom(room) {
     type: 'room-state',
     room: {
       code: room.code,
+      mode: room.mode,
       players: room.players.map((player) => ({
         id: player.id,
         name: player.name,
@@ -50,6 +54,7 @@ function broadcastRoom(room) {
       state: room.state,
       round: room.round,
       lastResult: room.lastResult,
+      hostId: room.hostId,
     },
   };
 
@@ -148,10 +153,47 @@ wss.on('connection', (ws) => {
     try {
       const data = JSON.parse(message.toString());
 
-      if (data.type === 'join') {
-        const room = getRoom(data.roomCode || 'default');
+      if (data.type === 'create-room') {
+        const roomCode = (data.roomCode || 'default').toUpperCase();
+        const room = getRoom(roomCode, data.mode || 'game', null);
         currentRoom = room;
 
+        if (room.players.length > 0) {
+          sendToPlayer({ ws }, { type: 'error', message: 'Room already exists.' });
+          return;
+        }
+
+        const playerName = data.playerName || 'Host';
+        currentPlayer = {
+          id: `${room.code}-host`,
+          ws,
+          name: playerName,
+          connected: true,
+          move: null,
+        };
+
+        room.hostId = currentPlayer.id;
+        room.mode = data.mode || 'game';
+        room.players.push(currentPlayer);
+        sendToPlayer(currentPlayer, {
+          type: 'joined',
+          roomCode: room.code,
+          playerId: currentPlayer.id,
+          playerName: currentPlayer.name,
+          isHost: true,
+          mode: room.mode,
+        });
+        broadcastRoom(room);
+      }
+
+      if (data.type === 'join') {
+        const room = rooms.get((data.roomCode || 'default').toUpperCase()) || null;
+        if (!room || room.state === 'closed') {
+          sendToPlayer({ ws }, { type: 'error', message: 'Room not found.' });
+          return;
+        }
+
+        currentRoom = room;
         if (room.players.length >= 2) {
           sendToPlayer({ ws }, { type: 'error', message: 'Room is full.' });
           return;
@@ -172,6 +214,8 @@ wss.on('connection', (ws) => {
           roomCode: room.code,
           playerId: currentPlayer.id,
           playerName: currentPlayer.name,
+          isHost: false,
+          mode: room.mode,
         });
         broadcastRoom(room);
 
@@ -206,14 +250,14 @@ wss.on('connection', (ws) => {
       return;
     }
 
-    currentRoom.players = currentRoom.players.filter((player) => player.id !== currentPlayer.id);
-    currentRoom.state = 'waiting';
-    currentRoom.lastResult = null;
-    if (currentRoom.players.length === 0) {
+    const result = removePlayerFromRoom(currentRoom, currentPlayer.id);
+    if (result.closed) {
       rooms.delete(currentRoom.code);
-    } else {
-      broadcastRoom(currentRoom);
+      return;
     }
+
+    currentRoom.lastResult = null;
+    broadcastRoom(currentRoom);
   });
 });
 

@@ -5,15 +5,24 @@ let currentRound = 0;
 let lastDetectedGesture = '';
 let lastGestureTime = 0;
 let cameraStarted = false;
+let currentMode = 'game';
+let isHost = false;
 
+const menuScreen = document.getElementById('menu-screen');
+const gameScreen = document.getElementById('game-screen');
 const joinForm = document.getElementById('join-form');
-const roomCodeInput = document.getElementById('room-code');
-const playerNameInput = document.getElementById('player-name');
+const createForm = document.getElementById('create-form');
+const createRoomCodeInput = document.getElementById('room-code');
+const createPlayerNameInput = document.getElementById('player-name');
+const joinRoomCodeInput = document.getElementById('join-room-code');
+const joinPlayerNameInput = document.getElementById('join-player-name');
+const modeSelect = document.getElementById('mode-select');
 const statusEl = document.getElementById('status');
 const roomInfoEl = document.getElementById('room-info');
 const roundInfoEl = document.getElementById('round-info');
 const overlayEl = document.getElementById('overlay');
 const videoEl = document.getElementById('video');
+const backButton = document.getElementById('back-button');
 
 function connectSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -29,7 +38,14 @@ function connectSocket() {
     if (data.type === 'joined') {
       roomCode = data.roomCode;
       playerName = data.playerName;
+      currentMode = data.mode || 'game';
+      isHost = Boolean(data.isHost);
+      menuScreen.classList.add('hidden');
+      gameScreen.classList.remove('hidden');
       statusEl.textContent = `เข้าห้อง ${roomCode} เรียบร้อย`;
+      if (currentMode === 'test') {
+        overlayEl.textContent = 'โหมดทดสอบ: แสดงท่ามือและตรวจจับ';
+      }
       return;
     }
 
@@ -88,14 +104,14 @@ function renderRoomState(room) {
   if (room.players.length === 2) {
     statusEl.textContent = 'พร้อมเล่นแล้ว';
   } else {
-    statusEl.textContent = 'กำลังรอผู้เล่นอีกคน...';
+    statusEl.textContent = isHost ? 'กำลังรอผู้เล่นอีกคน...' : 'กำลังรอผู้เล่นอีกคน...';
   }
 }
 
 joinForm.addEventListener('submit', (event) => {
   event.preventDefault();
-  const roomCodeValue = roomCodeInput.value.trim().toUpperCase();
-  const playerNameValue = playerNameInput.value.trim();
+  const roomCodeValue = joinRoomCodeInput.value.trim().toUpperCase();
+  const playerNameValue = joinPlayerNameInput.value.trim();
 
   if (!roomCodeValue || !playerNameValue) {
     statusEl.textContent = 'กรอกเลขห้องและชื่อก่อน';
@@ -107,6 +123,30 @@ joinForm.addEventListener('submit', (event) => {
   }
 
   socket.send(JSON.stringify({ type: 'join', roomCode: roomCodeValue, playerName: playerNameValue }));
+});
+
+createForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const roomCodeValue = createRoomCodeInput.value.trim().toUpperCase();
+  const playerNameValue = createPlayerNameInput.value.trim();
+  const selectedMode = modeSelect.value;
+
+  if (!roomCodeValue || !playerNameValue) {
+    statusEl.textContent = 'กรอกเลขห้องและชื่อก่อน';
+    return;
+  }
+
+  if (!socket || socket.readyState !== WebSocket.OPEN) {
+    connectSocket();
+  }
+
+  currentMode = selectedMode;
+  socket.send(JSON.stringify({ type: 'create-room', roomCode: roomCodeValue, playerName: playerNameValue, mode: selectedMode }));
+});
+
+backButton.addEventListener('click', () => {
+  menuScreen.classList.remove('hidden');
+  gameScreen.classList.add('hidden');
 });
 
 function sendMove(move) {
@@ -176,6 +216,10 @@ function onResults(results) {
   const landmarks = results.multiHandLandmarks[0];
   const gesture = classifyGesture(landmarks);
 
+  if (currentMode === 'test') {
+    overlayEl.textContent = `โหมดทดสอบ: ${gesture || 'ไม่พบท่า'}`;
+  }
+
   if (!gesture || gesture === 'unknown') {
     return;
   }
@@ -183,7 +227,9 @@ function onResults(results) {
   if (gesture !== lastDetectedGesture || Date.now() - lastGestureTime > 700) {
     lastDetectedGesture = gesture;
     lastGestureTime = Date.now();
-    sendMove(gesture);
+    if (currentMode === 'game') {
+      sendMove(gesture);
+    }
   }
 }
 
