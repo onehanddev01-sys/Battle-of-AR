@@ -2,7 +2,7 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const { WebSocketServer } = require('ws');
-const { resolveRound } = require('./game');
+const { resolveCombatTurn } = require('./game');
 const { removePlayerFromRoom } = require('./roomState');
 
 const app = express();
@@ -10,7 +10,7 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
 const PORT = process.env.PORT || 3000;
-const ROUND_TIMEOUT_MS = 5000;
+const TURN_TIMEOUT_MS = 30000;
 
 const rooms = new Map();
 
@@ -27,7 +27,7 @@ function createRoom(code, mode, hostId) {
     hostId,
     players: [],
     state: 'waiting',
-    round: 0,
+    turn: 0,
     lastResult: null,
     timeout: null,
   };
@@ -52,7 +52,7 @@ function broadcastRoom(room) {
         connected: player.connected,
       })),
       state: room.state,
-      round: room.round,
+      turn: room.turn,
       lastResult: room.lastResult,
       hostId: room.hostId,
     },
@@ -71,13 +71,13 @@ function sendToPlayer(player, payload) {
   }
 }
 
-function startRound(room) {
+function startTurn(room) {
   if (room.timeout) {
     clearTimeout(room.timeout);
   }
 
   room.state = 'ready';
-  room.round += 1;
+  room.turn += 1;
   room.players.forEach((player) => {
     player.move = null;
   });
@@ -87,9 +87,9 @@ function startRound(room) {
 
   room.players.forEach((player) => {
     sendToPlayer(player, {
-      type: 'round-ready',
-      round: room.round,
-      timeoutMs: ROUND_TIMEOUT_MS,
+      type: 'turn-ready',
+      turn: room.turn,
+      timeoutMs: TURN_TIMEOUT_MS,
     });
   });
 }
@@ -111,21 +111,21 @@ function beginCountdown(room) {
       broadcastRoom(room);
       room.players.forEach((player) => {
         sendToPlayer(player, {
-          type: 'round-start',
-          round: room.round,
-          timeoutMs: ROUND_TIMEOUT_MS,
+          type: 'turn-start',
+          turn: room.turn,
+          timeoutMs: TURN_TIMEOUT_MS,
         });
       });
       room.timeout = setTimeout(() => {
-        finalizeRound(room);
-      }, ROUND_TIMEOUT_MS);
+        finalizeTurn(room);
+      }, TURN_TIMEOUT_MS);
       return;
     }
 
     room.players.forEach((player) => {
       sendToPlayer(player, {
         type: 'countdown',
-        round: room.round,
+        turn: room.turn,
         value: countdown,
       });
     });
@@ -137,7 +137,7 @@ function beginCountdown(room) {
   tick();
 }
 
-function finalizeRound(room) {
+function finalizeTurn(room) {
   if (room.state !== 'playing') {
     return;
   }
@@ -154,33 +154,39 @@ function finalizeRound(room) {
   const move1 = player1.move || 'none';
   const move2 = player2.move || 'none';
 
-  let result = 'draw';
-  if (move1 !== 'none' && move2 !== 'none') {
-    result = resolveRound(move1, move2);
-  } else {
-    result = 'timeout';
-  }
+  const player1State = { hp: player1.hp || 10, energy: player1.energy || 0 };
+  const player2State = { hp: player2.hp || 10, energy: player2.energy || 0 };
+  const result = resolveCombatTurn(move1, move2, player1State, player2State);
+
+  player1.hp = result.hp1;
+  player2.hp = result.hp2;
+  player1.energy = result.energy1;
+  player2.energy = result.energy2;
 
   room.state = 'result';
   room.lastResult = {
-    round: room.round,
+    turn: room.turn,
     result,
     moves: { player1: move1, player2: move2 },
+    hp: { player1: player1.hp, player2: player2.hp },
+    energy: { player1: player1.energy, player2: player2.energy },
   };
 
   broadcastRoom(room);
 
   room.players.forEach((player) => {
     sendToPlayer(player, {
-      type: 'round-result',
-      round: room.round,
+      type: 'turn-result',
+      turn: room.turn,
       result,
       moves: { player1: move1, player2: move2 },
+      hp: { player1: player1.hp, player2: player2.hp },
+      energy: { player1: player1.energy, player2: player2.energy },
     });
   });
 
   room.timeout = setTimeout(() => {
-    startRound(room);
+    startTurn(room);
   }, 2500);
 }
 
@@ -209,6 +215,8 @@ wss.on('connection', (ws) => {
           name: playerName,
           connected: true,
           move: null,
+          hp: 10,
+          energy: 0,
         };
 
         room.hostId = currentPlayer.id;
@@ -245,6 +253,8 @@ wss.on('connection', (ws) => {
           name: playerName,
           connected: true,
           move: null,
+          hp: 10,
+          energy: 0,
         };
 
         room.players.push(currentPlayer);
@@ -259,7 +269,7 @@ wss.on('connection', (ws) => {
         broadcastRoom(room);
 
         if (room.players.length === 2) {
-          startRound(room);
+          startTurn(room);
         }
       }
 

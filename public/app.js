@@ -22,6 +22,7 @@ const modeSelect = document.getElementById('mode-select');
 const statusEl = document.getElementById('status');
 const roomInfoEl = document.getElementById('room-info');
 const roundInfoEl = document.getElementById('round-info');
+const statusBarEl = document.getElementById('status-bar');
 const overlayEl = document.getElementById('overlay');
 const videoEl = document.getElementById('video');
 const backButton = document.getElementById('back-button');
@@ -61,10 +62,10 @@ function connectSocket() {
       return;
     }
 
-    if (data.type === 'round-ready') {
-      currentRound = data.round;
+    if (data.type === 'turn-ready') {
+      currentRound = data.turn;
       roundState = 'ready';
-      roundInfoEl.innerHTML = `รอบที่ ${data.round} พร้อมแล้ว<br/>กดเริ่มเพื่อเริ่มนับถอยหลัง`;
+      roundInfoEl.innerHTML = `เทิร์นที่ ${data.turn} พร้อมแล้ว<br/>กดเริ่มเพื่อเริ่มนับถอยหลัง`;
       overlayEl.textContent = 'พร้อมเริ่ม';
       showResultCard(false);
       return;
@@ -77,17 +78,17 @@ function connectSocket() {
       return;
     }
 
-    if (data.type === 'round-start') {
-      currentRound = data.round;
+    if (data.type === 'turn-start') {
+      currentRound = data.turn;
       roundState = 'playing';
-      roundInfoEl.textContent = `รอบที่ ${data.round} เริ่มแล้ว เลือกท่าใน 5 วินาที`;
+      roundInfoEl.textContent = `เทิร์นที่ ${data.turn} เริ่มแล้ว เลือกท่าของคุณใน 30 วินาที`;
       overlayEl.textContent = 'เริ่มจับมือ';
       return;
     }
 
-    if (data.type === 'round-result') {
+    if (data.type === 'turn-result') {
       roundState = 'result';
-      showResultCard(true, data.result, data.moves, data.round);
+      showResultCard(true, data.result, data.moves, data.turn);
       resultText.textContent = formatResult(data.result, data.moves);
       return;
     }
@@ -125,12 +126,14 @@ function formatResult(result, moves) {
 
 function renderRoomState(room) {
   const playerNames = room.players.map((player) => player.name).join(', ') || 'ยังไม่มีผู้เล่น';
+  const playerStats = room.players.length > 0 ? room.players.map((player) => `${player.name}: HP ${player.hp || 10} / EN ${player.energy || 0}`).join('<br/>') : 'ยังไม่มีผู้เล่น';
   roomInfoEl.innerHTML = `ห้อง: <strong>${room.code}</strong><br/>ผู้เล่น: ${playerNames}<br/>สถานะ: ${room.state}`;
+  statusBarEl.innerHTML = `<strong>HP / Energy</strong><br/>${playerStats}`;
 
   if (room.players.length === 2) {
     statusEl.textContent = 'พร้อมเล่นแล้ว';
   } else {
-    statusEl.textContent = isHost ? 'กำลังรอผู้เล่นอีกคน...' : 'กำลังรอผู้เล่นอีกคน...';
+    statusEl.textContent = 'กำลังรอผู้เล่นอีกคน...';
   }
 }
 

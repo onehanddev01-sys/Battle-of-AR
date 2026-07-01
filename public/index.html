@@ -10,13 +10,13 @@
     <main class="app-shell">
       <section id="menu-screen" class="panel hero">
         <h1>Battle of AR</h1>
-        <p>สร้างห้องด้วยเลขห้องและเล่น Rock Paper Scissors แบบเรียลไทม์ด้วยกล้อง</p>
+        <p>สร้างห้องด้วยเลขห้องและเล่นเกมต่อสู้แบบเทิร์นต่อเทิร์นด้วยกล้อง</p>
 
         <form id="create-form" class="join-form">
           <input id="room-code" maxlength="6" placeholder="เลขห้อง" required />
           <input id="player-name" maxlength="16" placeholder="ชื่อคุณ" required />
           <select id="mode-select">
-            <option value="game">เกมจริง</option>
+            <option value="game">Battle of AR</option>
             <option value="test">โหมดทดสอบ</option>
           </select>
           <button type="submit">สร้างห้อง</button>
@@ -38,10 +38,11 @@
         </div>
 
         <div class="controls">
-          <button id="start-round-button" type="button">▶ เริ่มรอบ</button>
-          <button data-move="rock">✊ Rock</button>
-          <button data-move="paper">✋ Paper</button>
-          <button data-move="scissors">✌️ Scissors</button>
+          <button id="start-round-button" type="button">▶ เริ่มเทิร์น</button>
+          <button data-move="attack">✊ Attack</button>
+          <button data-move="guard">✋ Guard</button>
+          <button data-move="charge">✌️ Charge</button>
+          <button data-move="ultimate">🤟 Ultimate</button>
           <button id="back-button" type="button">กลับเมนู</button>
         </div>
 
@@ -51,6 +52,7 @@
           <button id="replay-button" type="button">เล่นต่อ</button>
         </div>
 
+        <div id="status-bar" class="status-bar"></div>
         <div id="room-info" class="room-info"></div>
         <div id="round-info" class="round-info"></div>
       </section>

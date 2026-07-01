@@ -13,11 +13,17 @@ body {
 
 .app-shell {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: minmax(320px, 480px) minmax(320px, 1fr);
   gap: 1.25rem;
   padding: 1.5rem;
-  max-width: 1100px;
+  max-width: 1400px;
   margin: 0 auto;
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
 }
 
 .panel {
@@ -88,9 +94,16 @@ video {
 
 .status,
 .room-info,
-.round-info {
+.round-info,
+.status-bar {
   margin-top: 0.9rem;
   line-height: 1.5;
+}
+
+.status-bar {
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.08);
 }
 
 .hidden {

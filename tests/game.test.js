@@ -1,22 +1,29 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { resolveRound } = require('../game');
+const { resolveCombatTurn } = require('../game');
 
-test('rock beats scissors', () => {
-  assert.equal(resolveRound('rock', 'scissors'), 'player1');
-  assert.equal(resolveRound('scissors', 'rock'), 'player2');
+const basePlayer1 = { hp: 10, energy: 0 };
+const basePlayer2 = { hp: 10, energy: 0 };
+
+test('attack deals 2 damage', () => {
+  const result = resolveCombatTurn('attack', 'charge', basePlayer1, basePlayer2);
+  assert.equal(result.hp2, 8);
+  assert.equal(result.energy2, 1);
 });
 
-test('paper beats rock', () => {
-  assert.equal(resolveRound('paper', 'rock'), 'player1');
-  assert.equal(resolveRound('rock', 'paper'), 'player2');
+test('guard prevents attack damage', () => {
+  const result = resolveCombatTurn('guard', 'attack', basePlayer1, basePlayer2);
+  assert.equal(result.hp1, 10);
+  assert.equal(result.hp2, 10);
 });
 
-test('scissors beats paper', () => {
-  assert.equal(resolveRound('scissors', 'paper'), 'player1');
-  assert.equal(resolveRound('paper', 'scissors'), 'player2');
+test('ultimate deals 5 damage and spends 3 energy', () => {
+  const result = resolveCombatTurn('ultimate', 'charge', { hp: 10, energy: 3 }, { hp: 10, energy: 0 });
+  assert.equal(result.hp2, 5);
+  assert.equal(result.energy1, 0);
 });
 
-test('same moves result in draw', () => {
-  assert.equal(resolveRound('rock', 'rock'), 'draw');
+test('ultimate against guard reduces damage to 2', () => {
+  const result = resolveCombatTurn('ultimate', 'guard', { hp: 10, energy: 3 }, { hp: 10, energy: 0 });
+  assert.equal(result.hp2, 8);
 });
