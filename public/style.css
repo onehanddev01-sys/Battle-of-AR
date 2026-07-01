@@ -5,18 +5,28 @@
   color: #f5f8ff;
 }
 
+*, *::before, *::after {
+  box-sizing: border-box; /* แก้: กัน padding ดันขนาด input/button ล้น */
+}
+
+html,
 body {
   margin: 0;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body {
   background: linear-gradient(135deg, #0f172a, #1d4ed8);
 }
 
 .app-shell {
+  width: 100%;
+  max-width: 1500px;
   display: grid;
   grid-template-columns: minmax(320px, 480px) minmax(520px, 1fr);
   gap: 1.25rem;
   padding: 1.5rem;
-  max-width: 1500px;
   margin: 0 auto;
 }
 
@@ -28,6 +38,13 @@ body {
   grid-column: 2;
 }
 
+/* แก้: เพิ่ม breakpoint แท็บเล็ตแยกออกมา ลด min-height วิดีโอลงทีละขั้น */
+@media (max-width: 1100px) {
+  .video-wrap {
+    min-height: 340px;
+  }
+}
+
 @media (max-width: 960px) {
   .app-shell {
     grid-template-columns: 1fr;
@@ -36,6 +53,10 @@ body {
   .game-panel,
   .menu-screen {
     grid-column: auto;
+  }
+
+  .video-wrap {
+    min-height: 300px;
   }
 }
 
@@ -54,15 +75,17 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
+    width: 100%;
   }
 
-  .game-side-right {
+  .game-side-left {
     order: -1;
   }
 
   .game-side-left,
   .game-side-right {
     width: 100%;
+    min-width: 0;
   }
 
   .controls {
@@ -81,13 +104,24 @@ body {
   }
 
   .video-wrap {
-    min-height: 280px;
+    min-height: 220px; /* แก้: ลดลงอีกสำหรับจอมือถือจริงๆ ไม่ใช่แค่แคบ */
   }
 
   .status-bar,
   .room-info,
   .round-info {
     font-size: 0.95rem;
+  }
+}
+
+@media (max-width: 380px) {
+  /* แก้: เพิ่มไว้เผื่อจอมือถือจิ๋วๆ เช่น iPhone SE */
+  .app-shell {
+    padding: 0.75rem;
+  }
+
+  h1, h2, h3 {
+    font-size: 1.1rem;
   }
 }
 
@@ -106,6 +140,12 @@ body {
   margin-top: 1rem;
 }
 
+.join-form input,
+.join-form select {
+  flex: 1 1 160px; /* แก้: ให้ input ยืด/หดตามพื้นที่แทนที่จะเท่ากันตายตัว */
+  min-width: 0;
+}
+
 input,
 button {
   padding: 0.8rem 0.9rem;
@@ -119,10 +159,15 @@ button {
   background: #38bdf8;
   color: #052a4b;
   font-weight: 700;
+  min-height: 44px; /* แก้: touch target ขั้นต่ำ (Apple/Google guideline) แม้ในโหมดคอม */
 }
 
 button:hover {
   filter: brightness(1.05);
+}
+
+button:active {
+  filter: brightness(0.95); /* แก้: feedback ตอนแตะบนมือถือ */
 }
 
 .video-wrap {
@@ -148,6 +193,8 @@ video {
   color: white;
   background: rgba(0, 0, 0, 0.35);
   font-weight: 700;
+  text-align: center; /* แก้: กันข้อความยาวล้นขอบบนจอแคบ */
+  padding: 0 1rem;
 }
 
 .game-grid {
@@ -163,7 +210,7 @@ video {
 }
 
 .game-side-left {
-  min-width: 320px;
+  min-width: 0; /* แก้: เดิม 320px ทำให้ grid บีบตัวไม่ได้บนจอกลางๆ */
 }
 
 .game-side-right {

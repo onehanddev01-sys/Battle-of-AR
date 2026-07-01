@@ -35,6 +35,13 @@
       <section id="game-screen" class="panel game-panel hidden">
         <div class="game-grid">
           <div class="game-side game-side-left">
+            <div class="video-wrap">
+              <video id="video" autoplay playsinline muted></video>
+              <div id="overlay" class="overlay">เปิดกล้องเพื่อเล่น</div>
+            </div>
+          </div>
+
+          <div class="game-side game-side-right">
             <div class="controls">
               <button id="start-round-button" type="button">▶ เริ่มเทิร์น</button>
               <button data-move="attack">✊ Attack</button>
@@ -53,13 +60,6 @@
             <div id="status-bar" class="status-bar"></div>
             <div id="room-info" class="room-info"></div>
             <div id="round-info" class="round-info"></div>
-          </div>
-
-          <div class="game-side game-side-right">
-            <div class="video-wrap">
-              <video id="video" autoplay playsinline muted></video>
-              <div id="overlay" class="overlay">เปิดกล้องเพื่อเล่น</div>
-            </div>
           </div>
         </div>
       </section>
