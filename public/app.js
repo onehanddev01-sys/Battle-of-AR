@@ -7,6 +7,8 @@ let lastGestureTime = 0;
 let cameraStarted = false;
 let currentMode = 'game';
 let isHost = false;
+let roundState = 'waiting';
+let resultCardVisible = false;
 
 const menuScreen = document.getElementById('menu-screen');
 const gameScreen = document.getElementById('game-screen');
@@ -23,6 +25,11 @@ const roundInfoEl = document.getElementById('round-info');
 const overlayEl = document.getElementById('overlay');
 const videoEl = document.getElementById('video');
 const backButton = document.getElementById('back-button');
+const startRoundButton = document.getElementById('start-round-button');
+const replayButton = document.getElementById('replay-button');
+const resultCard = document.getElementById('result-card');
+const resultTitle = document.getElementById('result-title');
+const resultText = document.getElementById('result-text');
 
 function connectSocket() {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -54,15 +61,34 @@ function connectSocket() {
       return;
     }
 
+    if (data.type === 'round-ready') {
+      currentRound = data.round;
+      roundState = 'ready';
+      roundInfoEl.innerHTML = `รอบที่ ${data.round} พร้อมแล้ว<br/>กดเริ่มเพื่อเริ่มนับถอยหลัง`;
+      overlayEl.textContent = 'พร้อมเริ่ม';
+      showResultCard(false);
+      return;
+    }
+
+    if (data.type === 'countdown') {
+      roundState = 'countdown';
+      roundInfoEl.textContent = `นับถอยหลัง ${data.value}`;
+      overlayEl.textContent = `เตรียมตัว: ${data.value}`;
+      return;
+    }
+
     if (data.type === 'round-start') {
       currentRound = data.round;
+      roundState = 'playing';
       roundInfoEl.textContent = `รอบที่ ${data.round} เริ่มแล้ว เลือกท่าใน 5 วินาที`;
       overlayEl.textContent = 'เริ่มจับมือ';
       return;
     }
 
     if (data.type === 'round-result') {
-      roundInfoEl.innerHTML = `ผลรอบ ${data.round}: <strong>${formatResult(data.result, data.moves)}</strong>`;
+      roundState = 'result';
+      showResultCard(true, data.result, data.moves, data.round);
+      resultText.textContent = formatResult(data.result, data.moves);
       return;
     }
 
@@ -148,6 +174,38 @@ backButton.addEventListener('click', () => {
   menuScreen.classList.remove('hidden');
   gameScreen.classList.add('hidden');
 });
+
+startRoundButton.addEventListener('click', () => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'start-round' }));
+  }
+});
+
+replayButton.addEventListener('click', () => {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({ type: 'start-round' }));
+  }
+});
+
+function showResultCard(show, result = '', moves = {}, round = currentRound) {
+  resultCardVisible = Boolean(show);
+  resultCard.classList.toggle('hidden', !show);
+  if (!show) {
+    return;
+  }
+
+  if (result === 'draw') {
+    resultTitle.textContent = 'ผลลัพธ์: เสมอ';
+  } else if (result === 'player1') {
+    resultTitle.textContent = 'คุณชนะ!';
+  } else if (result === 'player2') {
+    resultTitle.textContent = 'คุณแพ้';
+  } else {
+    resultTitle.textContent = 'หมดเวลา';
+  }
+
+  resultText.innerHTML = `รอบที่ ${round}<br/>${formatResult(result, moves)}`;
+}
 
 function sendMove(move) {
   if (!socket || socket.readyState !== WebSocket.OPEN) {

@@ -76,7 +76,7 @@ function startRound(room) {
     clearTimeout(room.timeout);
   }
 
-  room.state = 'playing';
+  room.state = 'ready';
   room.round += 1;
   room.players.forEach((player) => {
     player.move = null;
@@ -87,15 +87,54 @@ function startRound(room) {
 
   room.players.forEach((player) => {
     sendToPlayer(player, {
-      type: 'round-start',
+      type: 'round-ready',
       round: room.round,
       timeoutMs: ROUND_TIMEOUT_MS,
     });
   });
+}
 
-  room.timeout = setTimeout(() => {
-    finalizeRound(room);
-  }, ROUND_TIMEOUT_MS);
+function beginCountdown(room) {
+  if (room.state !== 'ready') {
+    return;
+  }
+
+  room.state = 'countdown';
+  let countdown = 3;
+  const tick = () => {
+    if (room.state !== 'countdown') {
+      return;
+    }
+
+    if (countdown <= 0) {
+      room.state = 'playing';
+      broadcastRoom(room);
+      room.players.forEach((player) => {
+        sendToPlayer(player, {
+          type: 'round-start',
+          round: room.round,
+          timeoutMs: ROUND_TIMEOUT_MS,
+        });
+      });
+      room.timeout = setTimeout(() => {
+        finalizeRound(room);
+      }, ROUND_TIMEOUT_MS);
+      return;
+    }
+
+    room.players.forEach((player) => {
+      sendToPlayer(player, {
+        type: 'countdown',
+        round: room.round,
+        value: countdown,
+      });
+    });
+
+    countdown -= 1;
+    setTimeout(tick, 1000);
+  };
+
+  tick();
 }
 
 function finalizeRound(room) {
@@ -221,6 +260,12 @@ wss.on('connection', (ws) => {
 
         if (room.players.length === 2) {
           startRound(room);
+        }
+      }
+
+      if (data.type === 'start-round' && currentRoom && currentPlayer) {
+        if (currentRoom.state === 'ready') {
+          beginCountdown(currentRoom);
         }
       }
 
