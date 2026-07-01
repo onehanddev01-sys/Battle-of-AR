@@ -13,16 +13,29 @@ body {
 
 .app-shell {
   display: grid;
-  grid-template-columns: minmax(320px, 480px) minmax(320px, 1fr);
+  grid-template-columns: minmax(320px, 480px) minmax(520px, 1fr);
   gap: 1.25rem;
   padding: 1.5rem;
-  max-width: 1400px;
+  max-width: 1500px;
   margin: 0 auto;
+}
+
+.menu-screen {
+  grid-column: 1;
+}
+
+.game-panel {
+  grid-column: 2;
 }
 
 @media (max-width: 960px) {
   .app-shell {
     grid-template-columns: 1fr;
+  }
+
+  .game-panel,
+  .menu-screen {
+    grid-column: auto;
   }
 }
 
@@ -65,7 +78,7 @@ button:hover {
   overflow: hidden;
   border-radius: 20px;
   background: black;
-  min-height: 280px;
+  min-height: 420px;
 }
 
 video {
@@ -86,8 +99,8 @@ video {
 }
 
 .controls {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0.7rem;
   margin-top: 1rem;
 }
