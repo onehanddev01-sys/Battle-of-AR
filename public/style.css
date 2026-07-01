@@ -76,16 +76,14 @@ body {
     flex-direction: column;
     gap: 0.85rem;
     width: 100%;
+    align-items: stretch;
   }
 
   .game-side-left,
   .game-side-right {
     width: 100%;
     min-width: 0;
-  }
-
-  .game-side-right {
-    order: -1;
+    order: 0;
   }
 
   .controls {
