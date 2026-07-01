@@ -78,14 +78,14 @@ body {
     width: 100%;
   }
 
-  .game-side-left {
-    order: -1;
-  }
-
   .game-side-left,
   .game-side-right {
     width: 100%;
     min-width: 0;
+  }
+
+  .game-side-right {
+    order: -1;
   }
 
   .controls {
